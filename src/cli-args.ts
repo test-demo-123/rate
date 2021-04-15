@@ -1,6 +1,6 @@
 import * as yargs from 'yargs';
 
-const sortCols = ['gender', 'first', 'last', 'dob', 'favorite-color'];
+const sortCols = ['gender', 'firstName', 'lastName', 'dob', 'favoriteColor'];
 export const args = yargs
     .option('s', {
         type: 'array',

@@ -27,3 +27,8 @@ export const reifyUser = (data: Record<keyof iUserDetails, string>): iUserDetail
         gender: (g: string) => g.toLowerCase().includes('f') ? 'F' : 'M',
     })
 )(data) as any;
+
+export const userToStrs = (user: iUserDetails): Record<keyof iUserDetails, string> => ({
+    ...user,
+    dob: user.dob.toFormat('YYYY/MM/DD')
+})

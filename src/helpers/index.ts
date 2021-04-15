@@ -1,5 +1,6 @@
 import { curryN, fromPairs, trim } from 'ramda';
 import assert from 'assert';
+import { Writable } from 'stream';
 
 export class UnparseableLine extends Error {}
 
@@ -26,3 +27,11 @@ export const deduceDelimiter = (line: string): typeof supportedDelimiters[number
 }
 
 export const noop = (...anything: any[]) => {};
+
+// wrapper around stdOut so the stream closes
+export const stdOut = () => new Writable({
+    write(chunk, _, cb) {
+        process.stdout.write(chunk);
+        cb();
+    },
+})
