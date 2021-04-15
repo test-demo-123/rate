@@ -6,6 +6,7 @@ import * as db from './helpers/db';
 import { pipe, toString } from 'ramda';
 import { createWriteStream } from 'fs';
 import { args } from './cli-args';
+import { Transform } from 'stream';
 
 const parseSort = (s: any): [string, 'asc'|'desc'] => !s.includes(':')
     ? [s, 'asc']
@@ -22,7 +23,12 @@ const userFromLine = pipe(
     console.info('starting processor');
 
     const source = args.p ? fromFileSystem(args.p) : fromStdIn();
-    const target = args.d ? createWriteStream(args.d) : process.stdout;
+    const target = args.d ? createWriteStream(args.d) : new Transform({
+        objectMode: true,
+        transform (chunk, _, cb) {
+            console.log({chunk})
+        }
+    });
 
     for await (const line of source) {
         await db.saveUser(userFromLine(line))
@@ -32,13 +38,13 @@ const userFromLine = pipe(
 
     const sorts = args.s?.map(parseSort);
 
-    db.getCon()
+    const res =    await db.getCon()
         .table('users')
         .modify(q => sorts?.forEach(([col, dir]) => q.orderBy(col, dir)))
-        .stream()
-        .pipe(target);
+        // .stream()
+        // .pipe(target);
 
-
+        console.log({res})
     console.info('finished processing');
     process.exit();
 })();
