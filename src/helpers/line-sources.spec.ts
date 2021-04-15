@@ -4,6 +4,10 @@ import * as readline from 'readline';
 import { F } from 'ramda';
 
 describe('stream', () => {
+    beforeAll(async () => {
+        await fs.promises.mkdir('/tmp/rate-demo').catch(F)
+    });
+
     it('from file should open up a strea to a file', () => {
         const res = sources.fromFiles('/dev/null');
         expect(res).toBeInstanceOf(readline.Interface);
