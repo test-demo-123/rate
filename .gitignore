@@ -20,3 +20,5 @@ amplify-gradle-config.json
 amplifytools.xcconfig
 .secret-*
 /notes
+/test-results
+/coverage
