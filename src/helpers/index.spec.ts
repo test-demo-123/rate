@@ -1,4 +1,4 @@
-
+import { Readable } from 'stream';
 import { range } from 'ramda';
 import * as helpers from './';
 
@@ -72,6 +72,17 @@ describe('helpers', () => {
         })
     })
 
+    describe('stdout', () => {
+        it('should close std out stream', (done) => {
+            const std = helpers.stdOut();
+            const r = new Readable({read() {}});
+            r.pipe(std);
+            r.push('')
+            r.push(null);
+            r.destroy();
+            std.on('finish', done);
+        }, 200)
+    });
     describe('noop', () => {
         it('should not throw', () => {
             helpers.noop();

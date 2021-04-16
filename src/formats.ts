@@ -3,14 +3,17 @@ import { PassThrough } from 'stream';
 import { toEDNStringFromSimpleObject } from 'edn-data';
 
 type info = { isFirst: boolean, isLast: boolean }
-const helper = (append: string, fn: (chunk: any, { isFirst, isLast }: info) => string, prepend: string) => {
+export const helper = (append: string, fn: (chunk: any, { isFirst, isLast }: info) => string, concat: string) => {
     let seen = 0;
-    let prev: any;
+    let prev: string;
+    
     return new PassThrough({
-        objectMode: true,
+        readableObjectMode: false,
+        writableObjectMode: true,
         write(chunk, _, cb) {
             if (!seen) this.push(append);
-            if (prev) this.push(fn(prev, { isFirst: !seen, isLast: false }));
+
+            if (prev) this.push(fn(prev, { isFirst: seen === 1, isLast: false }));
             seen++
             prev = chunk;
 
@@ -18,7 +21,7 @@ const helper = (append: string, fn: (chunk: any, { isFirst, isLast }: info) => s
         },
         flush(cb) {
             if (prev) this.push(fn(prev, { isFirst: seen === 1, isLast: true }))
-            this.push(prepend);
+            this.push(concat);
             this.push(null);
             cb();
         }
@@ -28,7 +31,7 @@ const helper = (append: string, fn: (chunk: any, { isFirst, isLast }: info) => s
 export const json = () => helper(
     '[', (chunk, {isLast}) => {
         // last line in JSON should not have comma
-        return '\n    ' + JSON.stringify(chunk) + (!isLast ? ',' : '')
+        return `\n    ${JSON.stringify(chunk)}${(!isLast ? ',' : '')}`
     }, '\n]'
 )
 
@@ -37,12 +40,20 @@ export const edn = () => helper(
         return '\n  ' + toEDNStringFromSimpleObject(chunk)}, '\n]'
 )
 
-export const csv = ({ delimiter = ',', header = true}) => helper(
+export const csv = ({ delimiter = ', ', header = true}) => helper(
     '', 
-    (chunk, first) => {
-        const headerRow = first && header ? Object.keys(chunk).join(delimiter) + '\n' : '';
+    (chunk, { isFirst }) => {
+        const headerRow = isFirst && header ? Object.keys(chunk).join(delimiter) + '\n' : '';
         const row = Object.values(chunk).join(delimiter) + '\n';
         return `${headerRow}${row}`
     },
     ''
 )
+
+export const getFormatter = (type: 'json'|'edn'|'csv' = 'json') => {
+    if (type === 'json') return json();
+    if (type === 'edn') return edn();
+    if (type === 'csv') return csv({ delimiter: ', ', header: true });
+
+    throw new Error(`unknown parser: ${type}`);
+}

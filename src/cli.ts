@@ -11,14 +11,14 @@ import { Writable } from 'stream';
 import { promisify } from 'util';
 import { pipeline as p} from 'stream';
 const pipeline = promisify(p);
-import * as formats from './formats';
+import { getFormatter } from './formats';
 import { chain } from 'stream-chain';
 
-const parseSort = (s: any): [string, 'asc'|'desc'] => !s.includes(':')
+export const parseSort = (s: any): [string, 'asc'|'desc'] => !s.includes(':')
     ? [s, 'asc']
     : s.split(':') as any;
 
-const userFromLine = pipe(
+export const userFromLine = pipe(
     (x: any) => x.toString('utf8'),
     parseLine(['firstName', 'lastName', 'gender', 'favoriteColor', 'dob']),
     reifyUser,
@@ -34,13 +34,14 @@ const userFromLine = pipe(
     }
 
     const sorts = args.s?.map(parseSort);
+    const formatter = getFormatter(args.f as any);
 
     const users = db.getCon()
         .table('users')
         .modify(q => sorts?.forEach(([col, dir]) => q.orderBy(col, dir)))
         .stream();
 
-    await pipeline(users, chain([userToStrs, formats.edn()]), target);
+    await pipeline(users, chain([userToStrs, formatter]), target);
 
     process.exit();
 })().catch(e => {

@@ -30,5 +30,5 @@ export const reifyUser = (data: Record<keyof iUserDetails, string>): iUserDetail
 
 export const userToStrs = (user: iUserDetails): Record<keyof iUserDetails, string> => ({
     ...user,
-    dob: user.dob.toFormat('YYYY/MM/DD')
+    dob: user.dob.toFormat('L/d/y')
 })
